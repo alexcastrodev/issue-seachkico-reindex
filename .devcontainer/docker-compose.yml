@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: sleep infinity
+    volumes:
+      - ../..:/workspaces:cached
+    network_mode: service:postgres
+    depends_on:
+      - postgres
+      - searchkick
+
+  postgres:
+    image: postgres:16.3-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+    healthcheck:
+      test: pg_isready -U postgres -h 127.0.0.1
+      interval: 5s
+
+  searchkick:
+    image: opensearchproject/opensearch:2.6.0
+    environment:
+      - "network.host=0.0.0.0"
+      - "discovery.type=single-node"
+      - "OPENSEARCH_JAVA_OPTS=-Xms750m -Xmx750m"
+      - "plugins.security.disabled=true"
+    expose:
+      - "9200"
+      - "9300"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
